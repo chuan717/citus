@@ -79,6 +79,7 @@ typedef struct HashPartitionContext
 	FmgrInfo *comparisonFunction;
 	ShardInterval **syntheticShardIntervalArray;
 	uint32 partitionCount;
+	Oid collation;
 	bool hasUniformHashDistribution;
 } HashPartitionContext;
 
@@ -92,6 +93,7 @@ typedef struct HashPartitionContext
 typedef struct FileOutputStream
 {
 	File fileDescriptor;
+	off_t offset;
 	StringInfo fileBuffer;
 	StringInfo filePath;
 } FileOutputStream;

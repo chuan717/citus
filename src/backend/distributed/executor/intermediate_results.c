@@ -27,6 +27,7 @@
 #include "distributed/remote_commands.h"
 #include "distributed/transmit.h"
 #include "distributed/transaction_identifier.h"
+#include "distributed/version_compat.h"
 #include "distributed/worker_protocol.h"
 #include "nodes/makefuncs.h"
 #include "nodes/parsenodes.h"
@@ -66,6 +67,7 @@ typedef struct RemoteFileDestReceiver
 	/* whether to write to a local file */
 	bool writeLocalFile;
 	File fileDesc;
+	off_t offset;
 
 	/* state on how to copy out data types */
 	CopyOutState copyOutState;
@@ -79,7 +81,7 @@ typedef struct RemoteFileDestReceiver
 static void RemoteFileDestReceiverStartup(DestReceiver *dest, int operation,
 										  TupleDesc inputTupleDescriptor);
 static StringInfo ConstructCopyResultStatement(const char *resultId);
-static void WriteToLocalFile(StringInfo copyData, File fileDesc);
+static void WriteToLocalFile(StringInfo copyData, RemoteFileDestReceiver *fileDest);
 static bool RemoteFileDestReceiverReceive(TupleTableSlot *slot, DestReceiver *dest);
 static void BroadcastCopyData(StringInfo dataBuffer, List *connectionList);
 static void SendCopyDataOverConnection(StringInfo dataBuffer,
@@ -264,6 +266,7 @@ RemoteFileDestReceiverStartup(DestReceiver *dest, int operation,
 		elog(DEBUG1, "writing to local file \"%s\"", fileName);
 
 		resultDest->fileDesc = FileOpenForTransmit(fileName, fileFlags, fileMode);
+		resultDest->offset = 0;
 	}
 
 	foreach(initialNodeCell, initialNodeList)
@@ -329,7 +332,7 @@ RemoteFileDestReceiverStartup(DestReceiver *dest, int operation,
 
 		if (resultDest->writeLocalFile)
 		{
-			WriteToLocalFile(copyOutState->fe_msgbuf, resultDest->fileDesc);
+			WriteToLocalFile(copyOutState->fe_msgbuf, resultDest);
 		}
 	}
 
@@ -394,7 +397,7 @@ RemoteFileDestReceiverReceive(TupleTableSlot *slot, DestReceiver *dest)
 	/* write to local file (if applicable) */
 	if (resultDest->writeLocalFile)
 	{
-		WriteToLocalFile(copyOutState->fe_msgbuf, resultDest->fileDesc);
+		WriteToLocalFile(copyOutState->fe_msgbuf, resultDest);
 	}
 
 	MemoryContextSwitchTo(oldContext);
@@ -411,14 +414,18 @@ RemoteFileDestReceiverReceive(TupleTableSlot *slot, DestReceiver *dest)
  * WriteToLocalResultsFile writes the bytes in a StringInfo to a local file.
  */
 static void
-WriteToLocalFile(StringInfo copyData, File fileDesc)
+WriteToLocalFile(StringInfo copyData, RemoteFileDestReceiver *fileDest)
 {
-	int bytesWritten = FileWrite(fileDesc, copyData->data, copyData->len, PG_WAIT_IO);
+	int bytesWritten = FileWriteCompat(fileDest->fileDesc, copyData->data, copyData->len,
+									   fileDest->offset,
+									   PG_WAIT_IO);
 	if (bytesWritten < 0)
 	{
 		ereport(ERROR, (errcode_for_file_access(),
 						errmsg("could not append to file: %m")));
 	}
+
+	fileDest->offset += bytesWritten;
 }
 
 
@@ -444,7 +451,7 @@ RemoteFileDestReceiverShutdown(DestReceiver *destReceiver)
 
 		if (resultDest->writeLocalFile)
 		{
-			WriteToLocalFile(copyOutState->fe_msgbuf, resultDest->fileDesc);
+			WriteToLocalFile(copyOutState->fe_msgbuf, resultDest);
 		}
 	}
 

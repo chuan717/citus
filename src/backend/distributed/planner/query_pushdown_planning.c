@@ -31,10 +31,14 @@
 #include "distributed/pg_dist_partition.h"
 #include "distributed/query_pushdown_planning.h"
 #include "distributed/relation_restriction_equivalence.h"
+#include "distributed/version_compat.h"
 #include "nodes/nodeFuncs.h"
+#if PG_VERSION_NUM >= 120000
+#include "nodes/makefuncs.h"
+#endif
 #include "nodes/pg_list.h"
 #include "optimizer/clauses.h"
-#include "optimizer/var.h"
+#include "compat/optimizer/var.h"
 #include "parser/parsetree.h"
 
 
@@ -1009,7 +1013,11 @@ DeferErrorIfUnsupportedTableCombination(Query *queryTree)
 		 * subquery, or immutable function.
 		 */
 		if (rangeTableEntry->rtekind == RTE_RELATION ||
-			rangeTableEntry->rtekind == RTE_SUBQUERY)
+			rangeTableEntry->rtekind == RTE_SUBQUERY
+#if PG_VERSION_NUM >= 120000
+			|| rangeTableEntry->rtekind == RTE_RESULT
+#endif
+			)
 		{
 			/* accepted */
 		}
@@ -1332,7 +1340,7 @@ static bool
 IsRecurringRangeTable(List *rangeTable, RecurringTuplesType *recurType)
 {
 	return range_table_walker(rangeTable, HasRecurringTuples, recurType,
-							  QTW_EXAMINE_RTES);
+							  QTW_EXAMINE_RTES_BEFORE);
 }
 
 
@@ -1407,7 +1415,7 @@ HasRecurringTuples(Node *node, RecurringTuplesType *recurType)
 		}
 
 		return query_tree_walker((Query *) node, HasRecurringTuples,
-								 recurType, QTW_EXAMINE_RTES);
+								 recurType, QTW_EXAMINE_RTES_BEFORE);
 	}
 
 	return expression_tree_walker(node, HasRecurringTuples, recurType);
