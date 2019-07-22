@@ -417,7 +417,7 @@ VerifyTransmitStmt(CopyStmt *copyStatement)
 	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
-				 (errmsg("path must be in the pgsql_job_cache directory"))));
+				 (errmsg("path must be in the " PG_JOB_CACHE_DIR " directory"))));
 	}
 
 	if (copyStatement->filename != NULL)

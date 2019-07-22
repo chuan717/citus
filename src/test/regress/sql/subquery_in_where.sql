@@ -31,9 +31,8 @@ WHERE  events_user_id IN (SELECT user_id
 
 -- Recurring tuples as empty join tree 
 SELECT * 
-FROM   (SELECT 1 AS id, 
-               2 AS value_1, 
-               3 AS value_3) AS tt1 
+FROM   (SELECT 1 AS id, 2 AS value_1, 3 AS value_3
+		UNION ALL SELECT 2 as id, 3 as value_1, 4 as value_3) AS tt1 
 WHERE  id IN (SELECT user_id 
               FROM   events_table); 
 

@@ -9,7 +9,7 @@ SHOW server_version \gset
 SELECT substring(:'server_version', '\d+')::int AS server_version;
  server_version 
 ----------------
-             11
+             12
 (1 row)
 
 --
@@ -420,7 +420,7 @@ SELECT * FROM partitioning_test WHERE id = 9 OR id = 10 ORDER BY 1;
 -- create default partition
 CREATE TABLE partitioning_test_default PARTITION OF partitioning_test DEFAULT;
 \d+ partitioning_test
-                             Table "public.partitioning_test"
+                       Partitioned table "public.partitioning_test"
  Column |  Type   | Collation | Nullable | Default | Storage | Stats target | Description 
 --------+---------+-----------+----------+---------+---------+--------------+-------------
  id     | integer |           |          |         | plain   |              | 
@@ -545,6 +545,7 @@ SELECT tablename, indexname FROM pg_indexes WHERE tablename LIKE 'partitioning_t
 ---------------------------+----------------------------------
  partitioning_test_2010    | partitioned_2010_index
  partitioning_test_2009    | partitioning_2009_index
+ partitioning_test         | partitioning_index
  partitioning_test_2009    | partitioning_test_2009_id_idx
  partitioning_test_2010    | partitioning_test_2010_id_idx
  partitioning_test_2011    | partitioning_test_2011_id_idx
@@ -552,7 +553,7 @@ SELECT tablename, indexname FROM pg_indexes WHERE tablename LIKE 'partitioning_t
  partitioning_test_2013    | partitioning_test_2013_id_idx
  partitioning_test_2014    | partitioning_test_2014_id_idx
  partitioning_test_default | partitioning_test_default_id_idx
-(9 rows)
+(10 rows)
 
 -- test drop
 -- indexes created on parent table can only be dropped on parent table
@@ -575,7 +576,8 @@ SELECT tablename, indexname FROM pg_indexes WHERE tablename LIKE 'non_distribute
               tablename              |                 indexname                 
 -------------------------------------+-------------------------------------------
  non_distributed_partitioned_table_1 | non_distributed_partitioned_table_1_a_idx
-(1 row)
+ non_distributed_partitioned_table   | non_distributed_partitioned_table_index
+(2 rows)
 
 -- drop the index and see it is dropped
 DROP INDEX non_distributed_partitioned_table_index;
