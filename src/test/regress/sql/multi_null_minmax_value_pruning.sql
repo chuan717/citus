@@ -6,10 +6,6 @@
 -- and that we don't partition or join prune shards that have null values.
 
 
--- print major version number for version-specific tests
-SHOW server_version \gset
-SELECT substring(:'server_version', '\d+')::int > 10 AS server_version_above_ten;
-
 SET client_min_messages TO DEBUG2;
 SET citus.explain_all_tasks TO on;
 -- to avoid differing explain output - executor doesn't matter,
