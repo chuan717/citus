@@ -1147,7 +1147,6 @@ NOTICE:  drop cascades to 2 other objects
 DROP TABLE referencing_table CASCADE;
 NOTICE:  drop cascades to constraint fkey_ref_to_dist on table referencing_table2
 DROP TABLE referencing_table2 CASCADE;
-\set VERBOSITY default
 -- Check if the above fkeys are created with create_distributed_table
 CREATE TABLE referenced_table(test_column int, test_column2 int UNIQUE, PRIMARY KEY(test_column));
 CREATE TABLE referencing_table(id int PRIMARY KEY, ref_id int, FOREIGN KEY (id) REFERENCES referenced_table(test_column) ON DELETE CASCADE);
@@ -1181,11 +1180,10 @@ SELECT count(*) FROM table_fkeys_in_workers WHERE relid LIKE 'fkey_reference_tab
 
 DROP TABLE referenced_table CASCADE;
 NOTICE:  drop cascades to 2 other objects
-DETAIL:  drop cascades to constraint referencing_table2_ref_id_fkey on table referencing_table2
-drop cascades to constraint referencing_table_id_fkey on table referencing_table
 DROP TABLE referencing_table CASCADE;
 NOTICE:  drop cascades to constraint referencing_table2_id_fkey on table referencing_table2
 DROP TABLE referencing_table2 CASCADE;
+\set VERBOSITY default
 -- In this test we have a chained relationship in form of 
 -- distributed table (referencing_referencing_table) has a foreign key with two columns
 -- to another distributed table (referencing_table)

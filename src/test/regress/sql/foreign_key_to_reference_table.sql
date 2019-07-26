@@ -451,6 +451,7 @@ SELECT create_distributed_table('referencing_table', 'id');
 
 SELECT count(*) FROM table_fkeys_in_workers WHERE relid LIKE 'fkey_reference_table.%' AND refd_relid LIKE 'fkey_reference_table.%';
 
+\set VERBOSITY terse
 DROP TABLE referenced_table CASCADE;
 DROP TABLE referenced_table2 CASCADE;
 DROP TABLE referencing_table CASCADE;
@@ -514,6 +515,7 @@ SELECT count(*) FROM table_fkeys_in_workers WHERE relid LIKE 'fkey_reference_tab
 DROP TABLE referenced_table CASCADE;
 DROP TABLE referenced_table2 CASCADE;
 DROP TABLE referencing_table CASCADE;
+\set VERBOSITY default
 
 
 -- two distributed tables are referencing to one reference table and
