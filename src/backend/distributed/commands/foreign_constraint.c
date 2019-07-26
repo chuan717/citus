@@ -376,10 +376,10 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 
 
 /*
- * ColumnAppearsInForeignKeyToReferenceTable checks if there is foreign constraint
- * from/to a reference table on the given column. We iterate pgConstraint to fetch
- * the constraint on the given relationId and find if any of the constraints
- * includes the given column.
+ * ColumnAppearsInForeignKeyToReferenceTable checks if there is a foreign key
+ * constraint from/to a reference table on the given column. We iterate
+ * pg_constraint to fetch the constraint on the given relationId and find
+ * if any of the constraints includes the given column.
  */
 bool
 ColumnAppearsInForeignKeyToReferenceTable(char *columnName, Oid relationId)
