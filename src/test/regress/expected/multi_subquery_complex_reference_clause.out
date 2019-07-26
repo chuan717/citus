@@ -341,7 +341,7 @@ ON user_buy_test_table.item_id = users_ref_test_table.id;
      1
 (1 row)
 
--- subquery without FROM can be the inner relationship in an outer join
+-- subquery without FROM can be the inner relationship in an outer join before pg12
 SELECT count(*) FROM user_buy_test_table LEFT JOIN (SELECT 5 AS id) users_ref_test_table
 ON user_buy_test_table.item_id = users_ref_test_table.id;
  count 
