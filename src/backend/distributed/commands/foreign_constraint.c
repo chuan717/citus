@@ -136,7 +136,6 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 	int attrIdx = 0;
 	bool foreignConstraintOnPartitionColumn = false;
 	bool selfReferencingTable = false;
-	bool referencedTableIsAReferenceTable = false;
 	bool referencingColumnsIncludeDistKey = false;
 
 	pgConstraint = heap_open(ConstraintRelationId, AccessShareLock);
@@ -150,6 +149,8 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 	{
 		Form_pg_constraint constraintForm = (Form_pg_constraint) GETSTRUCT(heapTuple);
 		bool singleReplicatedTable = true;
+		bool referencedIsDistributed = false;
+		bool referencedIsReferenceTable = false;
 
 		if (constraintForm->contype != CONSTRAINT_FOREIGN)
 		{
@@ -157,25 +158,33 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 			continue;
 		}
 
-		/*
-		 * We should make this check in this loop because the error message will only
-		 * be given if the table has a foreign constraint and the table is a reference
-		 * table.
-		 */
-		if (distributionMethod == DISTRIBUTE_BY_NONE)
+		referencedTableId = constraintForm->confrelid;
+		selfReferencingTable = (referencingTableId == referencedTableId);
+
+		referencedIsDistributed = IsDistributedTable(referencedTableId);
+		if (referencedIsDistributed)
 		{
-			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("cannot create foreign key constraint because "
-								   "reference tables are not supported as the "
-								   "referencing table of a foreign constraint"),
-							errdetail("Reference tables are only supported as the "
-									  "referenced table of a foreign key when the "
-									  "referencing table is a hash distributed "
-									  "table")));
+			referencedIsReferenceTable =
+				(PartitionMethod(referencedTableId) == DISTRIBUTE_BY_NONE);
+		}
+		else if (selfReferencingTable)
+		{
+			/*
+			 * If the table is just being distributed, IsDistributedTable() returns
+			 * false, so we need a special check for self-referencing tables.
+			 */
+			referencedIsReferenceTable = (distributionMethod == DISTRIBUTE_BY_NONE);
 		}
 
-		referencedTableId = constraintForm->confrelid;
-		selfReferencingTable = referencingTableId == referencedTableId;
+		/*
+		 * We support foreign keys between reference tables. No more checks
+		 * are necessary.
+		 */
+		if (distributionMethod == DISTRIBUTE_BY_NONE && referencedIsReferenceTable)
+		{
+			heapTuple = systable_getnext(scanDescriptor);
+			continue;
+		}
 
 		/*
 		 * Some checks are not meaningful if foreign key references the table itself.
@@ -183,22 +192,12 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 		 */
 		if (!selfReferencingTable)
 		{
-			if (!IsDistributedTable(referencedTableId))
+			if (!referencedIsDistributed)
 			{
 				ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
 								errmsg("cannot create foreign key constraint"),
 								errdetail("Referenced table must be a distributed "
 										  "table.")));
-			}
-
-			/*
-			 * PartitionMethod errors out when it is called for non-distributed
-			 * tables. This is why we make this check under !selfReferencingTable
-			 * and after !IsDistributedTable(referencedTableId).
-			 */
-			if (PartitionMethod(referencedTableId) == DISTRIBUTE_BY_NONE)
-			{
-				referencedTableIsAReferenceTable = true;
 			}
 
 			/*
@@ -208,7 +207,7 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 			referencedTableColocationId = TableColocationId(referencedTableId);
 			if (colocationId == INVALID_COLOCATION_ID ||
 				(colocationId != referencedTableColocationId &&
-				 !referencedTableIsAReferenceTable))
+				 !referencedIsReferenceTable))
 			{
 				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								errmsg("cannot create foreign key constraint since "
@@ -256,7 +255,7 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 			AttrNumber referencedAttrNo = DatumGetInt16(referencedColumnArray[attrIdx]);
 
 			if (distributionColumn->varattno == referencingAttrNo &&
-				(!referencedTableIsAReferenceTable &&
+				(!referencedIsReferenceTable &&
 				 referencedTablePartitionColumn->varattno == referencedAttrNo))
 			{
 				foreignConstraintOnPartitionColumn = true;
@@ -314,7 +313,7 @@ ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
 		 * if tables are hash-distributed and colocated, we need to make sure that
 		 * the distribution key is included in foreign constraint.
 		 */
-		if (!referencedTableIsAReferenceTable && !foreignConstraintOnPartitionColumn)
+		if (!referencedIsReferenceTable && !foreignConstraintOnPartitionColumn)
 		{
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("cannot create foreign key constraint"),
