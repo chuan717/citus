@@ -77,7 +77,7 @@ s/(job_[0-9]+\/task_[0-9]+\/p_[0-9]+\.)[0-9]+/\1xxxx/g
 s/Partitioned table "/Table "/g
 s/\) TABLESPACE pg_default$/\)/g
 s/invalid input syntax for type /invalid input syntax for /g
-s/_id_ref_id_fkey_/_id_fkey_/g
+s/_id_ref_id_fkey/_id_fkey/g
 s/_ref_id_id_fkey_/_ref_id_fkey_/g
 s/fk_test_2_col1_col2_fkey/fk_test_2_col1_fkey/g
 s/_id_other_column_ref_fkey/_id_fkey/g
