@@ -198,6 +198,32 @@ JoinTreeContainsSubquery(Query *query)
 }
 
 
+bool
+JoinTreeContainsWithoutFrom(Query *query)
+{
+	if (query->rtable == NIL)
+	{
+		return true;
+	}
+
+#if PG_VERSION_NUM >= 120000
+	{
+		ListCell *rteCell = NULL;
+		foreach(rteCell, query->rtable)
+		{
+			RangeTblEntry *rte = (RangeTblEntry *) lfirst(rteCell);
+			if (rte->rtekind == RTE_RESULT)
+			{
+				return true;
+			}
+		}
+	}
+#endif
+
+	return false;
+}
+
+
 /*
  * JoinTreeContainsSubqueryWalker returns true if the input joinTreeNode
  * references to a subquery. Otherwise, recurses into the expression.
@@ -655,7 +681,7 @@ FromClauseRecurringTupleType(Query *queryTree)
 {
 	RecurringTuplesType recurType = RECURRING_TUPLES_INVALID;
 
-	if (queryTree->rtable == NIL)
+	if (JoinTreeContainsWithoutFrom(queryTree))
 	{
 		return RECURRING_TUPLES_EMPTY_JOIN_TREE;
 	}
@@ -821,7 +847,7 @@ DeferErrorIfCannotPushdownSubquery(Query *subqueryTree, bool outerMostQueryHasLi
 		return deferredError;
 	}
 
-	if (subqueryTree->rtable == NIL &&
+	if (JoinTreeContainsWithoutFrom(subqueryTree) &&
 		contain_mutable_functions((Node *) subqueryTree->targetList))
 	{
 		preconditionsSatisfied = false;
@@ -1396,6 +1422,16 @@ HasRecurringTuples(Node *node, RecurringTuplesType *recurType)
 			 */
 			return true;
 		}
+#if PG_VERSION_NUM >= 120000
+		else if (rangeTableEntry->rtekind == RTE_RESULT)
+		{
+			/* This should be caught by JoinTreeContainsWithoutFrom earlier on
+			 * but handle again for completeness
+			 */
+			*recurType = RECURRING_TUPLES_EMPTY_JOIN_TREE;
+			return true;
+		}
+#endif
 
 		return false;
 	}
@@ -1403,7 +1439,7 @@ HasRecurringTuples(Node *node, RecurringTuplesType *recurType)
 	{
 		Query *query = (Query *) node;
 
-		if (query->rtable == NIL)
+		if (JoinTreeContainsWithoutFrom(query))
 		{
 			*recurType = RECURRING_TUPLES_EMPTY_JOIN_TREE;
 

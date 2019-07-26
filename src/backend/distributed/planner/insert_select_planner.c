@@ -764,7 +764,7 @@ MultiTaskRouterSelectQuerySupported(Query *query)
 		Assert(subquery->commandType == CMD_SELECT);
 
 		/* pushing down rtes without relations yields (shardCount * expectedRows) */
-		if (subquery->rtable == NIL)
+		if (JoinTreeContainsWithoutFrom(subquery))
 		{
 			return DeferredError(ERRCODE_FEATURE_NOT_SUPPORTED,
 								 "Subqueries without relations are not allowed in "
