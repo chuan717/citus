@@ -555,9 +555,11 @@ SELECT count(*) FROM referencing_table2;
 DELETE FROM referencing_table WHERE id > 200;
 SELECT count(*) FROM referencing_table2;
 
+\set VERBOSITY terse
 DROP TABLE referenced_table CASCADE;
 DROP TABLE referencing_table CASCADE;
 DROP TABLE referencing_table2 CASCADE;
+\set VERBOSITY default
 
 -- Check if the above fkeys are created with create_distributed_table
 CREATE TABLE referenced_table(test_column int, test_column2 int UNIQUE, PRIMARY KEY(test_column));
