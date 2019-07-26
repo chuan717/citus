@@ -80,5 +80,5 @@ s/invalid input syntax for type /invalid input syntax for /g
 s/_id_ref_id_fkey_/_id_fkey_/g
 s/_ref_id_id_fkey_/_ref_id_fkey_/g
 s/fk_test_2_col1_col2_fkey/fk_test_2_col1_fkey/g
-s/_id_other_column_ref_fkey/_id_ref_fkey/g
+s/_id_other_column_ref_fkey/_id_fkey/g
 s/lineitem_pkey_29000[01]/lineitem_pkey_29000X/g
