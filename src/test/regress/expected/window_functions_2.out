@@ -776,17 +776,17 @@ ORDER BY
    Sort Key: remote_scan.avg_1 DESC, remote_scan.avg DESC, remote_scan.user_id DESC
    ->  HashAggregate
          Group Key: remote_scan.user_id
-         ->  Custom Scan (Citus Real-Time)
+         ->  Custom Scan (Citus Adaptive)
                Task Count: 4
                Tasks Shown: One of 4
                ->  Task
                      Node: host=localhost port=57637 dbname=regression
                      ->  WindowAgg
                            ->  Sort
-                                 Sort Key: users_table.user_id, (min(users_table.user_id)), (avg(users_table.value_1))
+                                 Sort Key: users_table.user_id, (max(users_table.user_id)), (min(users_table.value_2))
                                  ->  WindowAgg
                                        ->  Sort
-                                             Sort Key: users_table.user_id, (max(users_table.user_id)), (min(users_table.value_2))
+                                             Sort Key: users_table.user_id, (min(users_table.user_id)), (avg(users_table.value_1))
                                              ->  HashAggregate
                                                    Group Key: users_table.user_id
                                                    ->  Seq Scan on users_table_1400256 users_table
@@ -963,7 +963,7 @@ ORDER BY user_id, avg(value_1) DESC;
    Sort Key: remote_scan.user_id, (pg_catalog.sum(((pg_catalog.sum(remote_scan.avg) / pg_catalog.sum(remote_scan.avg_1)))) / pg_catalog.sum(remote_scan.rank)) DESC
    ->  HashAggregate
          Group Key: remote_scan.user_id, remote_scan.worker_column_5
-         ->  Custom Scan (Citus Real-Time)
+         ->  Custom Scan (Citus Adaptive)
                Task Count: 4
                Tasks Shown: One of 4
                ->  Task
@@ -1039,7 +1039,7 @@ LIMIT 5;
          Sort Key: remote_scan.user_id, (pg_catalog.sum(((pg_catalog.sum(remote_scan.avg) / pg_catalog.sum(remote_scan.avg_1)))) / pg_catalog.sum(remote_scan.rank)) DESC
          ->  HashAggregate
                Group Key: remote_scan.user_id, remote_scan.worker_column_5
-               ->  Custom Scan (Citus Real-Time)
+               ->  Custom Scan (Citus Adaptive)
                      Task Count: 4
                      Tasks Shown: One of 4
                      ->  Task
@@ -1069,7 +1069,7 @@ LIMIT 5;
          Sort Key: remote_scan.user_id, (pg_catalog.sum(((pg_catalog.sum(remote_scan.avg) / pg_catalog.sum(remote_scan.avg_1)))) / pg_catalog.sum(remote_scan.rank)) DESC
          ->  HashAggregate
                Group Key: remote_scan.user_id, remote_scan.worker_column_5
-               ->  Custom Scan (Citus Real-Time)
+               ->  Custom Scan (Citus Adaptive)
                      Task Count: 4
                      Tasks Shown: One of 4
                      ->  Task
@@ -1099,7 +1099,7 @@ LIMIT 5;
          Sort Key: remote_scan.user_id, (pg_catalog.sum(((pg_catalog.sum(remote_scan.avg) / pg_catalog.sum(remote_scan.avg_1)))) / pg_catalog.sum(remote_scan.rank)) DESC
          ->  HashAggregate
                Group Key: remote_scan.user_id, remote_scan.worker_column_5
-               ->  Custom Scan (Citus Real-Time)
+               ->  Custom Scan (Citus Adaptive)
                      Task Count: 4
                      Tasks Shown: One of 4
                      ->  Task
@@ -1129,7 +1129,7 @@ LIMIT 5;
          Sort Key: remote_scan.user_id, (pg_catalog.sum(((pg_catalog.sum(remote_scan.avg) / pg_catalog.sum(remote_scan.avg_1)))) / pg_catalog.sum(remote_scan.rank)) DESC
          ->  HashAggregate
                Group Key: remote_scan.user_id, remote_scan.worker_column_5
-               ->  Custom Scan (Citus Real-Time)
+               ->  Custom Scan (Citus Adaptive)
                      Task Count: 4
                      Tasks Shown: One of 4
                      ->  Task

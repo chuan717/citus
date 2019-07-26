@@ -170,7 +170,7 @@ SELECT
 	COUNT(*) OVER (PARTITION BY user_id, user_id + 1),
 	rank() OVER (PARTITION BY user_id) as cnt1,
 	COUNT(*) OVER (PARTITION BY user_id, abs(value_1 - value_2)) as cnt2, 
-	date_trunc('min', lag(time) OVER (PARTITION BY user_id)) as datee,
+	date_trunc('min', lag(time) OVER (PARTITION BY user_id ORDER BY time)) as datee,
 	rank() OVER my_win  as rnnk,
 	avg(CASE
 			WHEN user_id > 4
