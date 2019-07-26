@@ -37,12 +37,12 @@ static bool HeapTupleOfForeignConstraintIncludesColumn(HeapTuple heapTuple, Oid
 													   char *columnName);
 
 /*
- * ConstraintIsAForeignKeyToReferenceTable function scans the pgConstraint to
- * fetch all of the constraints on the given relationId and see if at least one
- * of them is a foreign key referencing to a reference table.
+ * ConstraintIsAForeignKeyToReferenceTable checks if the given constraint is a
+ * foreign key constraint from the given relation to a reference table. It does
+ * that by scanning pg_constraint for foreign key constraints.
  */
 bool
-ConstraintIsAForeignKeyToReferenceTable(char *constraintNameInput, Oid relationId)
+ConstraintIsAForeignKeyToReferenceTable(char *constraintName, Oid relationId)
 {
 	Relation pgConstraint = NULL;
 	SysScanDesc scanDescriptor = NULL;
@@ -64,9 +64,9 @@ ConstraintIsAForeignKeyToReferenceTable(char *constraintNameInput, Oid relationI
 	{
 		Oid referencedTableId = InvalidOid;
 		Form_pg_constraint constraintForm = (Form_pg_constraint) GETSTRUCT(heapTuple);
-		char *constraintName = (constraintForm->conname).data;
+		char *tupleConstraintName = (constraintForm->conname).data;
 
-		if (strncmp(constraintNameInput, constraintName, NAMEDATALEN) != 0 ||
+		if (strncmp(constraintName, tupleConstraintName, NAMEDATALEN) != 0 ||
 			constraintForm->conrelid != relationId)
 		{
 			heapTuple = systable_getnext(scanDescriptor);
@@ -109,7 +109,8 @@ ConstraintIsAForeignKeyToReferenceTable(char *constraintNameInput, Oid relationI
  * - If referenced table is a reference table
  *      - ON DELETE/UPDATE SET NULL, ON DELETE/UPDATE SET DEFAULT and ON UPDATE CASCADE options
  *        are not used on the distribution key of the referencing column.
- * - If referencing table is a reference table, error out
+ * - If referencing table is a reference table, error out if the referenced table is not a
+ *   a reference table.
  */
 void
 ErrorIfUnsupportedForeignConstraint(Relation relation, char distributionMethod,
